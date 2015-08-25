@@ -1,6 +1,7 @@
 import { Vector2 } from '../math/Vector2';
 import { FileLoader } from './FileLoader';
 import { DefaultLoadingManager } from './LoadingManager';
+import { Reference } from './Reference';
 import * as Materials from '../materials/Materials';
 
 /**
@@ -51,7 +52,7 @@ Object.assign( MaterialLoader.prototype, {
 
 		}
 
-		var material = new Materials[ json.type ]();
+		var material = json.type == 'Reference' ? new Reference() : new Materials[ json.type ]();
 
 		if ( json.uuid !== undefined ) material.uuid = json.uuid;
 		if ( json.name !== undefined ) material.name = json.name;
