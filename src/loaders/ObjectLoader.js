@@ -49,6 +49,7 @@ import { MaterialLoader } from './MaterialLoader';
 import { BufferGeometryLoader } from './BufferGeometryLoader';
 import { JSONLoader } from './JSONLoader';
 import { FileLoader } from './FileLoader';
+import { Reference } from './Reference';
 import * as Geometries from '../geometries/Geometries';
 
 /**
@@ -367,6 +368,58 @@ Object.assign( ObjectLoader.prototype, {
 
 			}
 
+			var resolveReferences = function ( material, uuidStack ) {
+
+				if ( material.materials !== undefined ) {
+
+					for ( var i = 0, l = material.materials.length; i < l; i ++ ) {
+
+						var submaterial = material.materials[ i ];
+
+						if ( submaterial instanceof Reference ) {
+
+							if ( uuidStack.indexOf( submaterial.uuid ) < 0 ) {
+
+								var resolvedMaterial = materials[ submaterial.uuid ];
+
+								if ( resolvedMaterial ) {
+
+									material.materials[ i ] = resolvedMaterial;
+
+								} else {
+
+									console.warn( 'THREE.ObjectLoader.parseMaterials: Failed to resolve referenced material', submaterial.uuid );
+
+								}
+
+							} else {
+
+								console.warn( 'THREE.ObjectLoader.parseMaterials: Cyclic material reference detected', submaterial.uuid );
+
+							}
+
+
+						} else {
+
+							resolveReferences( material, uuidStack.concat( submaterial.uuid ) );
+
+						}
+
+					}
+
+				}
+
+			};
+
+			for ( var key in materials ) {
+
+				if ( materials.hasOwnProperty( key ) ) {
+
+					resolveReferences( materials[ key ], [ key ] );
+
+				}
+
+			}
 		}
 
 		return materials;
