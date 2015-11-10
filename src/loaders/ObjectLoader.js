@@ -46,6 +46,7 @@ import { ImageLoader } from './ImageLoader';
 import { LoadingManager, DefaultLoadingManager } from './LoadingManager';
 import { AnimationClip } from '../animation/AnimationClip';
 import { MaterialLoader } from './MaterialLoader';
+import { BufferGeometry } from '../core/BufferGeometry';
 import { BufferGeometryLoader } from './BufferGeometryLoader';
 import { JSONLoader } from './JSONLoader';
 import { FileLoader } from './FileLoader';
@@ -118,6 +119,12 @@ Object.assign( ObjectLoader.prototype, {
 	setCrossOrigin: function ( value ) {
 
 		this.crossOrigin = value;
+
+	},
+
+	setBufferGeometryForced: function ( value ) {
+
+		this.bufferGeometryForced = value;
 
 	},
 
@@ -327,6 +334,12 @@ Object.assign( ObjectLoader.prototype, {
 					case 'Geometry':
 
 						geometry = geometryLoader.parse( data.data, this.texturePath ).geometry;
+
+						if ( this.bufferGeometryForced ) {
+
+							geometry = new BufferGeometry().fromGeometry( geometry );
+
+						}
 
 						break;
 
