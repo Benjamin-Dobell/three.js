@@ -45,6 +45,12 @@ THREE.ObjectLoader.prototype = {
 
 	},
 
+	setBufferGeometryForced: function ( value ) {
+
+		this.bufferGeometryForced = value;
+
+	},
+
 	parse: function ( json, onLoad ) {
 
 		var geometries = this.parseGeometries( json.geometries );
@@ -260,6 +266,12 @@ THREE.ObjectLoader.prototype = {
 					case 'Geometry':
 
 						geometry = geometryLoader.parse( data.data, this.texturePath ).geometry;
+
+						if ( this.bufferGeometryForced ) {
+
+							geometry = new THREE.BufferGeometry().fromGeometry( geometry );
+
+						}
 
 						break;
 
