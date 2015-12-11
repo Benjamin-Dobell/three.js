@@ -568,7 +568,7 @@ def generate_texture_data(texture, image_dict, texture_list, texture_dict):
         if type(texture) is FbxFileTexture:
             texture_path = texture.GetFileName()
         else:
-            texture_path = texture.getName()
+            texture_path = texture.GetName()
 
         if option_copy_textures:
             relative_path = copy_texture(texture_path)
