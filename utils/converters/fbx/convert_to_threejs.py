@@ -316,6 +316,7 @@ def bind_texture(material_object, texture_dict, fbx_texture_type, texture):
         material_object[binding_type] = texture_uuid
         if option_transparency_detection and binding_type == 'map':
             material_object['transparent'] = detect_texture_transparency(texture.GetFileName())
+            material_object['depthWrite'] = not material_object['transparent']
     else:
         sys.stderr.write("Warning: %s is not a supported texture type - %s was not bound.\n" % (fbx_texture_type, texture.GetFileName()))
 
