@@ -626,6 +626,12 @@ THREE.ObjectLoader.prototype = {
 
 					break;
 
+				case 'LineSegments':
+
+					object = new THREE.LineSegments( getGeometry( data.geometry ), getMaterial( data.material ) );
+
+					break;
+
 				case 'PointCloud':
 
 					object = new THREE.PointCloud( getGeometry( data.geometry ), getMaterial( data.material ) );
