@@ -18,6 +18,13 @@ THREE.Line = function ( geometry, material, mode ) {
 	this.geometry = geometry !== undefined ? geometry : new THREE.Geometry();
 	this.material = material !== undefined ? material : new THREE.LineBasicMaterial( { color: Math.random() * 0xffffff } );
 
+	if ( this.geometry.type === 'BufferGeometry' ) {
+
+		// BufferGeometry only supports triangles, not lines
+		this.geometry = new THREE.Geometry().fromBufferGeometry( this.geometry );
+
+	}
+
 };
 
 THREE.Line.prototype = Object.create( THREE.Object3D.prototype );
@@ -167,7 +174,7 @@ THREE.Line.prototype.raycast = ( function () {
 				var distSq = ray.distanceSqToSegment( vertices[ i ], vertices[ i + 1 ], interRay, interSegment );
 
 				if ( distSq > precisionSq ) continue;
-				
+
 				interRay.applyMatrix4( this.matrixWorld ); //Move back to world space for distance calculation
 
 				var distance = raycaster.ray.origin.distanceTo( interRay );
