@@ -157,6 +157,19 @@ Object.assign( MaterialLoader.prototype, {
 
 		}
 
+		if ( json.referencedMaterials !== undefined ) {
+
+			for ( var i = 0, l = json.referencedMaterials.length; i < l; i ++ ) {
+
+				var reference = new Reference();
+				reference.uuid = json.referencedMaterials[ i ];
+
+				material.materials.push( reference );
+
+			}
+
+		}
+
 		return material;
 
 	}
