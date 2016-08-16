@@ -26,6 +26,7 @@ option_default_camera = False
 option_default_light = False
 option_pretty_print = False
 option_optimise_geometry = False
+option_output_legacy_geometry = False
 
 texture_conversion_enabled = True
 
@@ -189,6 +190,10 @@ def serialize_vector4(v, round_vector = False):
 def pack_color(c):
     color = (int(c[0]*255) << 16) + (int(c[1]*255) << 8) + int(c[2]*255)
     return int(color)
+
+def get_bit(value, position):
+    mask = 1 << position
+    return (value & mask) != 0
 
 def set_bit(value, position, on):
     if on:
@@ -1184,7 +1189,7 @@ def process_mesh_materials(mesh_list):
 
     return materials_list, material_offset_list
 
-def process_mesh_polygons(mesh_list, normals_to_indices, colors_to_indices, uvs_to_indices_list, vertex_offset_list, material_offset_list):
+def generate_mesh_faces(mesh_list, normals_to_indices, colors_to_indices, uvs_to_indices_list, vertex_offset_list, material_offset_list):
     faces = []
     for mesh_index in range(len(mesh_list)):
         mesh = mesh_list[mesh_index]
@@ -1399,19 +1404,27 @@ def generate_geometry_data(node):
 
         normal_values = generate_normals_from_dictionary(normals_to_indices)
         color_values = generate_colors_from_dictionary(colors_to_indices)
-        uv_values = generate_uvs_from_dictionary_layers(uvs_to_indices_list)
+        uv_layers = generate_uvs_from_dictionary_layers(uvs_to_indices_list)
 
         # Generate mesh faces for the Three.js file format
-        faces = process_mesh_polygons(geometry_list,
-                                      normals_to_indices,
-                                      colors_to_indices,
-                                      uvs_to_indices_list,
-                                      vertex_offsets,
-                                      material_offsets)
+        faces = generate_mesh_faces(geometry_list,
+                                    normals_to_indices,
+                                    colors_to_indices,
+                                    uvs_to_indices_list,
+                                    vertex_offsets,
+                                    material_offsets)
+    else:
+        normal_values = None
+        color_values = None
+        uv_layers = None
+        faces = None
 
+    geometry_name = get_geometry_name(node)
+
+    if option_output_legacy_geometry:
         # Generate counts for uvs, normals, colors, and faces
         nuvs = []
-        for layer_index, uvs in enumerate(uv_values):
+        for layer_index, uvs in enumerate(uv_layers):
             nuvs.append(str(len(uvs)))
 
         nnormals = len(normal_values)
@@ -1422,7 +1435,7 @@ def generate_geometry_data(node):
         normal_values = [val for n in normal_values for val in n]
         color_values = [c for c in color_values]
         faces = [val for f in faces for val in f]
-        uv_values = generate_uvs(uv_values)
+        uv_values = None if not uv_layers else generate_uvs(uv_layers)
 
         # Disable automatic json indenting when pretty printing for the arrays
         if option_pretty_print:
@@ -1431,28 +1444,147 @@ def generate_geometry_data(node):
             color_values = ChunkedIndent(color_values, 15)
             faces = ChunkedIndent(faces, 30)
 
-        metadata['normals'] = nnormals
-        metadata['colors'] = ncolors
-        metadata['faces'] = nfaces
-        metadata['uvs'] = nuvs
+        if option_output_legacy_geometry:
+            metadata['normals'] = nnormals
+            metadata['colors'] = ncolors
+            metadata['faces'] = nfaces
+            metadata['uvs'] = nuvs
+
+        return {
+            name_key: geometry_name,
+            'scale': 1,
+            'vertices': vertices,
+            'normals': [] if not normal_values else normal_values,
+            'colors': [] if not color_values else color_values,
+            'uvs': [] if not uv_values else uv_values,
+            'faces': [] if not faces else faces,
+            metadata_key: metadata
+        }
     else:
-        normal_values = None
-        color_values = None
-        uv_values = None
-        faces = None
+        # BufferGeometry does not have a concept of faces and doesn't make much use of indexes, as such we expand the face structure.
+        # Note: This approach of converting to faces and then back is by no means optimal
 
-    geometry_name = get_geometry_name(node)
+        positions = []
+        uvs1 = []
+        uvs2 = []
+        normals = []
+        colors = []
 
-    return {
-        name_key: geometry_name,
-        'scale': 1,
-        'vertices': vertices,
-        'normals': [] if not normal_values else normal_values,
-        'colors': [] if not color_values else color_values,
-        'uvs': [] if not uv_values else uv_values,
-        'faces': [] if not faces else faces,
-        metadata_key: metadata
-    }
+        has_uvs1 = len(uv_layers) > 0 and len(uv_layers[0]) > 0
+        has_uvs2 = len(uv_layers) > 1 and len(uv_layers[1]) > 0
+
+        for i in range(2, len(uv_layers)):
+            if len(uv_layers[i]) > 0:
+                stderr.write("Discarded UV channel #%d - Only two channels supported" % i)
+
+        group = None
+        groups = []
+        group_material_index = None
+
+        for face_index in range(0, len(faces)):
+            face_data = faces[face_index]
+            face_type = face_data[0]
+
+            is_triangle = get_bit(face_type, 0)
+
+            if not is_triangle:
+                sys.exit('ERROR: Buffer geometry does not support quads, only triangles')
+
+            has_material = get_bit(face_type, 1)
+            has_face_vertex_normals = get_bit(face_type, 5)
+            has_face_vertex_colors = get_bit(face_type, 7)
+
+            for vertex_index in range(0, 3):
+                vertex = vertices[face_data[vertex_index + 1]]
+                positions.extend(vertex)
+
+            data_index = 3
+
+            if has_material:
+                material_index = face_data[data_index]
+                data_index += 1
+
+                if material_index != group_material_index:
+                    if group != None:
+                        group.count = 3 * face_index - group['start']
+                        groups.append(group)
+
+                    group = {
+                        'start': 3 * face_index,
+                        'materialIndex': material_index
+                    }
+
+            if has_uvs1:
+                uv_index = face_data[data_index]
+                data_index += 1
+
+                uvs1.extend(uv_layers[0][uv_index])
+
+            if has_uvs2:
+                uv_index = face_data[data_index]
+                data_index += 1
+
+                uvs2.extend(uv_layers[1][uv_index])
+
+            if has_face_vertex_normals:
+                for i in range(0, 3):
+                    normal_index = face_data[data_index]
+                    data_index += 1
+
+                    normals.extend(normal_values[normal_index])
+
+            if has_face_vertex_colors:
+                for i in range(0, 3):
+                    color_index = face_data[data_index]
+                    data_index += 1
+
+                    colors.extend(color_values[color_index])
+
+        if group != None:
+            group.count = 3 * len(faces) - group.start
+            groups.append(group)
+
+        attributes = {
+            'position': {
+                'itemSize': 3,
+                'type': 'Float32Array',
+                'array': positions
+            }
+        }
+
+        if len(uvs1) > 0:
+            attributes['uv'] = {
+                'itemSize': 2,
+                'type': 'Float32Array',
+                'array': uvs1
+            }
+
+        if len(uvs2) > 0:
+            attributes['uv2'] = {
+                'itemSize': 2,
+                'type': 'Float32Array',
+                'array': uvs2
+            }
+
+        if len(normals) > 0:
+            attributes['normal'] = {
+                'itemSize': 3,
+                'type': 'Float32Array',
+                'array': normals
+            }
+
+        if len(colors) > 0:
+            attributes['color'] = {
+                'itemSize': 3,
+                'type': 'Float32Array',
+                'array': colors
+            }
+
+        return {
+            name_key: geometry_name,
+            'attributes': attributes,
+            'groups': groups
+        }
 
 def generate_geometry_list_from_hierarchy(node, geometry_list, geometry_dict):
     if node.GetNodeAttribute() == None:
@@ -1463,11 +1595,12 @@ def generate_geometry_list_from_hierarchy(node, geometry_list, geometry_dict):
             if attribute_type in FBX_ABSTRACT_GEOMETRY_TYPES:
                 converter.Triangulate(node.GetNodeAttribute(), True)
 
+            geometry_type = 'Geometry' if option_output_legacy_geometry else 'BufferGeometry'
             geometry_data = generate_geometry_data(node)
             geometry_uuid = str(uuid.uuid4())
 
             geometry_list.append({
-                type_key: 'Geometry',
+                type_key: geometry_type,
                 uuid_key: geometry_uuid,
                 data_key: geometry_data
             })
@@ -1878,6 +2011,7 @@ if __name__ == "__main__":
     parser.add_option('-l', '--add-light', action='store_true', dest='deflight', help="include default light in output scene", default=False)
     parser.add_option('-p', '--pretty-print', action='store_true', dest='pretty', help="nicely format the output JSON", default=False)
     parser.add_option('-g', '--optimize-geometry', action='store_true', dest='optimizegeometry', help="remove duplicate geometry", default=False)
+    parser.add_option("-b", "--legacy-geometry", dest="outputlegacygeometry", help="Output as legacy Geometry rather than BufferGeometry", default=False)
 
     (options, args) = parser.parse_args()
 
@@ -1893,6 +2027,7 @@ if __name__ == "__main__":
     option_default_light = options.deflight
     option_pretty_print = options.pretty
     option_optimize_geometry = options.optimizegeometry
+    option_output_legacy_geometry = options.outputlegacygeometry
 
     # Prepare the FBX SDK.
     sdk_manager, scene = InitializeSdkObjects()
