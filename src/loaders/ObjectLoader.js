@@ -335,7 +335,7 @@ Object.assign( ObjectLoader.prototype, {
 
 						geometry = geometryLoader.parse( data.data, this.texturePath ).geometry;
 
-						if ( this.bufferGeometryForced ) {
+						if ( this.bufferGeometryForced && geometry.faces.length > 0 ) {
 
 							geometry = new BufferGeometry().fromGeometry( geometry );
 
