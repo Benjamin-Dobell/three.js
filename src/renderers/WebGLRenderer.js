@@ -266,6 +266,7 @@ function WebGLRenderer( parameters ) {
 		}
 
 		_canvas.addEventListener( 'webglcontextlost', onContextLost, false );
+		_canvas.addEventListener( 'webglcontextrestored', onContextRestored, false );
 
 	} catch ( error ) {
 
@@ -627,10 +628,13 @@ function WebGLRenderer( parameters ) {
 		opaqueObjectsLastIndex = -1;
 
 		_canvas.removeEventListener( 'webglcontextlost', onContextLost, false );
+		_canvas.removeEventListener( 'webglcontextrestored', onContextRestored, false );
 
 	};
 
 	// Events
+
+	var scope = this;
 
 	function onContextLost( event ) {
 
@@ -640,6 +644,23 @@ function WebGLRenderer( parameters ) {
 		setDefaultGLState();
 
 		properties.clear();
+	}
+
+	function onContextRestored( event ) {
+
+		event.preventDefault();
+
+		resetGLState();
+		setDefaultGLState();
+
+		properties.clear();
+
+		textures = new WebGLTextures( _gl, extensions, state, properties, capabilities, paramThreeToGL, scope.info );
+		objects = new WebGLObjects( _gl, properties, scope.info );
+		programCache = new WebGLPrograms( scope, capabilities );
+		lightCache = new WebGLLights();
+
+		scope.info.programs = programCache.programs;
 
 	}
 
