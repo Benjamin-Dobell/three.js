@@ -2272,15 +2272,27 @@ function WebGLRenderer( parameters ) {
 
 		}
 
-		var instancing = Array.isArray( object );
-
 		if ( material.needsUpdate === false ) {
 
-			if ( ( instancing ? materialProperties.instancingProgram : materialProperties.program ) === undefined ) {
+			var program, activeAutoInstancingMode;
+
+			if ( Array.isArray( object ) ) {
+
+				program = materialProperties.instancingProgram;
+				activeAutoInstancingMode = autoInstancingMode;
+
+			} else {
+
+				program = materialProperties.program;
+				activeAutoInstancingMode = AutoInstancingDisabled;
+
+			}
+
+			if ( program === undefined ) {
 
 				material.needsUpdate = true;
 
-			} else if ( materialProperties.instancingMode != autoInstancingMode ) {
+			} else if ( materialProperties.instancingMode != activeAutoInstancingMode ) {
 
 				material.needsUpdate = true;
 
@@ -2298,7 +2310,7 @@ function WebGLRenderer( parameters ) {
 
 				material.needsUpdate = true;
 
-			} else if ( materialProperties.instancingMode != AutoInstancingDisabled && materialProperties.maxInstances !== autoInstancingMaxBatchSize ) {
+			} else if ( activeAutoInstancingMode != AutoInstancingDisabled && materialProperties.maxInstances !== autoInstancingMaxBatchSize ) {
 
 				material.needsUpdate = true;
 
