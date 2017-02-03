@@ -307,7 +307,7 @@ function WebGLRenderer( parameters ) {
 	// automatic geometry instancing
 
 	var autoInstancingMode = extensions.get( 'ANGLE_instanced_arrays' ) ? AutoInstancingAttributes : AutoInstancingDisabled;
-	var autoInstancingMinBatchSize = 2;
+	var autoInstancingMinBatchSize = 20;
 	var autoInstancingMaxBatchSize = 2000;
 
 	var autoInstancingTexture = null;
