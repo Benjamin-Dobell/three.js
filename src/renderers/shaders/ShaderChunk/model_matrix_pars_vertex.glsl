@@ -52,24 +52,24 @@
 
 	#elif defined USE_INSTANCING_ATTRIBUTES
 
-	    mat4 getModelMatrix() {
+		mat4 getModelMatrix() {
 
-            return mat4( instanceWorld1, instanceWorld2, instanceWorld3, instanceWorld4 );
+			return mat4( instanceWorld1, instanceWorld2, instanceWorld3, instanceWorld4 );
 
-        }
+		}
 
-        mat3 getNormalMatrix() {
+		mat3 getNormalMatrix() {
 
-            return mat3( instanceNormal1, instanceNormal2, instanceNormal3 );
+			return mat3( instanceNormal1, instanceNormal2, instanceNormal3 );
 
-        }
+		}
 
 	#endif
 
 #else
 
-    uniform mat4 modelMatrix;
-    uniform mat4 modelViewMatrix;
-    uniform mat3 normalMatrix;
+	uniform mat4 modelMatrix;
+	uniform mat4 modelViewMatrix;
+	uniform mat3 normalMatrix;
 
 #endif

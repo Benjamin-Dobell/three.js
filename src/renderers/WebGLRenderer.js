@@ -956,7 +956,7 @@ function WebGLRenderer( parameters ) {
 
 				if ( autoInstancingAttributes.hasOwnProperty( attributeName ) ) {
 
-					var attribute = autoInstancingAttributes[ attributeName];
+					var attribute = autoInstancingAttributes[ attributeName ];
 
 					if ( attribute.dynamic ) {
 
