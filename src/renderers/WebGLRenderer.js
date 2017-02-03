@@ -1561,13 +1561,21 @@ function WebGLRenderer( parameters ) {
 
 				var instancedGeometry = instanceGeometryMap[ uuid ];
 
-				instancedGeometry.objects = [];
+				if ( instancedGeometry.objects.length == 0 ) {
 
-				if ( instancedGeometry.groups ) {
+					delete instanceGeometryMap[ uuid ];
 
-					for ( var i = 0, l = instancedGeometry.groups.length; i < l; i++ ) {
+				} else {
 
-						instancedGeometry.groups[ i ] = [];
+					instancedGeometry.objects = [];
+
+					if ( instancedGeometry.groups ) {
+
+						for ( var i = 0, l = instancedGeometry.groups.length; i < l; i++ ) {
+
+							instancedGeometry.groups[ i ] = [];
+
+						}
 
 					}
 
