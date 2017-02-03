@@ -23,7 +23,7 @@ function WebGLBufferRenderer( gl, extensions, infoRender ) {
 
 	}
 
-	function renderInstances( geometry, instanceCount ) {
+	function renderInstances( geometry, instanceCount, start, vertexCount ) {
 
 		var extension = extensions.get( 'ANGLE_instanced_arrays' );
 
@@ -34,23 +34,7 @@ function WebGLBufferRenderer( gl, extensions, infoRender ) {
 
 		}
 
-		var position = geometry.attributes.position;
-
-		var vertexCount = 0;
-
-		if ( position.isInterleavedBufferAttribute ) {
-
-			vertexCount = position.data.count;
-
-			extension.drawArraysInstancedANGLE( mode, 0, vertexCount, instanceCount );
-
-		} else {
-
-			vertexCount = position.count;
-
-			extension.drawArraysInstancedANGLE( mode, 0, vertexCount, instanceCount );
-
-		}
+		extension.drawArraysInstancedANGLE( mode, start, vertexCount, instanceCount );
 
 		infoRender.calls ++;
 		infoRender.vertices += vertexCount * instanceCount;
