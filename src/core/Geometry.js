@@ -1195,6 +1195,10 @@ Object.assign( Geometry.prototype, EventDispatcher.prototype, {
 
 	copy: function ( source ) {
 
+		var i, il, j, jl, k, kl;
+
+		// reset
+
 		this.vertices = [];
 		this.colors = [];
 		this.faces = [];
