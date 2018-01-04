@@ -1,0 +1,102 @@
+
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<base href="../../" />
+		<script src="list.js"></script>
+		<script src="page.js"></script>
+		<link type="text/css" rel="stylesheet" href="page.css" />
+	</head>
+	<body>
+		<h1>[name]</h1>
+		<p>There are some ways you can optimize the performance of your Three.js application.</p>
+
+		<h2> Turn off auto-updates </h2>
+		<div>
+
+			<p>
+				One way to optimize performance is to turn off auto-updating of
+				matrices when it isn't needed. For that, see "How to update
+				things" under the "Next Steps" section. That page also contains
+				some other useful performance tips.
+			</p>
+
+		</div>
+
+		<h2> Re-use materials and geometries </h2>
+		<div>
+
+			<p>
+				Rather than making a new material and geometry for every mesh,
+				you can re-use materials and geometries if you know that
+				multiple meshes will have the same features. This saves on
+				memory usage. For example, if you have a bunch of spheres that
+				are all the same color and same size, you can re-use a single
+				geometry and material for each mesh:
+			</p>
+
+			<code>
+const geometry = new THREE.SphereGeometry( 10 )
+const material = new THREE.PhongMaterial( {
+	color: new THREE.Color( 0xff6600 )
+} )
+
+for ( let i = 0; i < 100; i++ ) {
+
+	// re-use the same geometry and material
+	const sphere = new THREE.Mesh( geometry, material )
+
+}
+			</code>
+
+		</div>
+
+		<h2> Use manual instancing </h2>
+		<div>
+
+			<p>
+				In some cases you may want to [link:https://en.wikipedia.org/wiki/Geometry_instancing instance]
+				your geometries to gain the maximum performance benefit when
+				meshes share the same geometry and material. Instancing allows
+				us to draw a geometry multiple times on the screen with a
+				single WebGL draw call rather than having one draw call per
+				instance. This can greatly reduce the number of time-consuming
+				JS-to-GL API calls in the app. Manual instancing can be useful
+				for particle systems and for repetitive scenery like trees,
+				grass, or crates in a warehouse.
+			</p>
+
+			<p>
+				To learn more about manual instancing, see [page:InstancedBufferAttribute],
+				[page:InstancedBufferGeometry], and [page:InstancedInterleavedBuffer]. Also search for "instanc"
+				over in the [link:http://threejs.org/examples examples].
+			</p>
+
+		</div>
+
+		<h2> Use automatic instancing </h2>
+		<div>
+
+			<p>
+				In a variety of cases where [page:Mesh] objects in a
+				[page:Scene] happen to share the same geometry and material,
+				auto-instancing (also known as auto-batching) in
+				[page:WebGLRenderer] can automatically detect which meshes can
+				be batched together into a single WebGL draw call rather than
+				having one draw call per mesh.
+			</p>
+
+			<p>
+				See the [page:WebGLRenderer.XXXXXXXXXXX] property to learn more
+				about configuration options. Small example:
+			</p>
+
+			<code>
+// small example here...
+			</code>
+
+		</div>
+
+	</body>
+</html>
