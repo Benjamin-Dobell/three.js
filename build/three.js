@@ -4401,7 +4401,7 @@
 		}
 
 		for ( var i = 0; i !== n; ++ i )
-			r[ i ] = renderer.allocTextureUnit( uuid + n );
+			r[ i ] = renderer.allocTextureUnit( uuid + i );
 
 		return r;
 
